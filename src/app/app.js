@@ -266,9 +266,7 @@ function viewVideo(video) {
     thumbnailImg.style.display = "none";
   } else {
     thumbnailImg.style.display = "block";
-    //Cache Busting Client Side Example
-    const queryString = `${video.thumbnailURL}?v=${Date.now()}`
-    thumbnailImg.src = queryString;
+    thumbnailImg.src = video.thumbnailURL;
   }
 
   const videoPlayer = document.getElementById("video-player");
