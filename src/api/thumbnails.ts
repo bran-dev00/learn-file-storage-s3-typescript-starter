@@ -6,6 +6,7 @@ import type { BunRequest } from "bun";
 import { BadRequestError, NotFoundError, UserForbiddenError } from "./errors";
 import path from "node:path"
 import { bundlerModuleNameResolver } from "typescript";
+import { randomBytes } from "node:crypto";
 
 type Thumbnail = {
   data: ArrayBuffer;
@@ -44,7 +45,6 @@ export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
       throw new BadRequestError("Invalid image file type");
     }
 
-    // const arrBuffer = await image.arrayBuffer();
 
     const video = getVideo(cfg.db,videoId);
 
@@ -56,13 +56,12 @@ export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
       throw new UserForbiddenError("User is not the owner of this video");
     }
 
-    const imageURL = `${path.join(cfg.assetsRoot,videoId)}.${mediaSubType}`;
-    const thumbnailPath = `http://localhost:${cfg.port}/assets/${videoId}.${mediaSubType}`;
+    const randomBuffer = randomBytes(32).toString("base64url");
 
-    Bun.write(imageURL,imageFile);
+    const imageURL = `${path.join(cfg.assetsRoot,randomBuffer)}.${mediaSubType}`;
+    const thumbnailPath = `http://localhost:${cfg.port}/assets/${randomBuffer}.${mediaSubType}`;
 
-    console.log(imageURL)
-    console.log(thumbnailPath);
+    await Bun.write(imageURL,imageFile);
 
     video.thumbnailURL = thumbnailPath;
     updateVideo(cfg.db,video);
