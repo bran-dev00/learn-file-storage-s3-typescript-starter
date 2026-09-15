@@ -4,6 +4,8 @@ import { getVideo, updateVideo } from "../db/videos";
 import type { ApiConfig } from "../config";
 import type { BunRequest } from "bun";
 import { BadRequestError, NotFoundError, UserForbiddenError } from "./errors";
+import path from "node:path"
+import { bundlerModuleNameResolver } from "typescript";
 
 type Thumbnail = {
   data: ArrayBuffer;
@@ -44,13 +46,18 @@ export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
       throw new UserForbiddenError("User is not the owner of this video");
     }
 
-    //Store the image data in thumbnail_url temporarily for now 
-    //Base64 Encoding
-    const imageData = Buffer.from(arrBuffer).toString("base64");
-    const imageDataURL = `data:${mediaType};base64,${imageData}`;
 
-    video.thumbnailURL = imageDataURL;
+    const imageExtension = mediaType.split("/")[1];
 
+    const imageURL = `${path.join(cfg.assetsRoot,videoId)}.${imageExtension}`;
+    const thumbnailPath = `http://localhost:${cfg.port}/assets/${videoId}.${imageExtension}`;
+
+    Bun.write(imageURL,image);
+
+    console.log(imageURL)
+    console.log(thumbnailPath);
+
+    video.thumbnailURL = thumbnailPath;
     updateVideo(cfg.db,video);
 
     return respondWithJSON(200, video);
