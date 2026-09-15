@@ -36,8 +36,12 @@ export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
     const mediaType = imageFile.type;
     const mediaSubType = mediaType.split("/")[1];
 
-    if(!mediaType.startsWith("image/png") || !mediaType.startsWith("image/jpeg")){
+    if(!mediaType.startsWith("image/")){
       throw new BadRequestError("Invalid file type");
+    }
+
+    if(mediaSubType !== "png" && mediaSubType !=="jpeg"){
+      throw new BadRequestError("Invalid image file type");
     }
 
     // const arrBuffer = await image.arrayBuffer();
