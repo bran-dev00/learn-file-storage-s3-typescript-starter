@@ -25,16 +25,22 @@ export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
   console.log("uploading thumbnail for video", videoId, "by user", userID);
 
   const parsedData = await req.formData();
-  const image = parsedData.get("thumbnail");
+  const imageFile = parsedData.get("thumbnail");
 
-  if(image instanceof File){
+  if(imageFile instanceof File){
     const MAX_UPLOAD_SPEED = 10 << 20;
-    if(image.size > MAX_UPLOAD_SPEED){
+    if(imageFile.size > MAX_UPLOAD_SPEED){
       throw new BadRequestError("Image file size too large");
     }
 
-    const mediaType = image.type;
-    const arrBuffer = await image.arrayBuffer();
+    const mediaType = imageFile.type;
+    const mediaSubType = mediaType.split("/")[1];
+
+    if(!mediaType.startsWith("image/png") || !mediaType.startsWith("image/jpeg")){
+      throw new BadRequestError("Invalid file type");
+    }
+
+    // const arrBuffer = await image.arrayBuffer();
 
     const video = getVideo(cfg.db,videoId);
 
@@ -46,13 +52,10 @@ export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
       throw new UserForbiddenError("User is not the owner of this video");
     }
 
+    const imageURL = `${path.join(cfg.assetsRoot,videoId)}.${mediaSubType}`;
+    const thumbnailPath = `http://localhost:${cfg.port}/assets/${videoId}.${mediaSubType}`;
 
-    const imageExtension = mediaType.split("/")[1];
-
-    const imageURL = `${path.join(cfg.assetsRoot,videoId)}.${imageExtension}`;
-    const thumbnailPath = `http://localhost:${cfg.port}/assets/${videoId}.${imageExtension}`;
-
-    Bun.write(imageURL,image);
+    Bun.write(imageURL,imageFile);
 
     console.log(imageURL)
     console.log(thumbnailPath);
