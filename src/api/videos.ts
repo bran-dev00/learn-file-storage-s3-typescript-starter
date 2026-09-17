@@ -2,6 +2,7 @@ import { respondWithJSON } from "./json";
 import { BadRequestError, UserForbiddenError } from "./errors";
 import { getBearerToken, validateJWT } from "../auth";
 import { getVideo, updateVideo } from "../db/videos";
+import { getVideoAspectRatio } from "./video-meta";
 import {rm} from "fs/promises"
 
 import { type ApiConfig } from "../config";
@@ -40,12 +41,18 @@ export async function handlerUploadVideo(cfg: ApiConfig, req: BunRequest) {
     throw new BadRequestError("Invalid file type, only MP4 is allowed");
   }
 
+  
   //Save the uploaded file to a temp file on disk
   // console.log(`VideoID: ${videoId}`);
   const tempFilePath = path.join("/tmp",`${videoId}.mp4`)
   await Bun.write(tempFilePath,videoFile);
 
-  let key = `${videoId}.mp4`
+  const aspectRatio = await getVideoAspectRatio(tempFilePath);
+
+  //Prefix aspect ratio to the object key
+  let key = `${aspectRatio}/${videoId}.mp4`
+
+  console.log(key);
   const s3file = cfg.s3Client.file(key,{bucket: cfg.s3Bucket});
   await s3file.write(videoFile, {type:videoFile.type});
 
@@ -59,3 +66,5 @@ export async function handlerUploadVideo(cfg: ApiConfig, req: BunRequest) {
 
   return respondWithJSON(200, video)
 }
+
+
